@@ -66,6 +66,11 @@ RC closePageFile(SM_FileHandle *fHandle) {
     
     FILE *file = fHandle->mgmtInfo;
     fclose(file);
+    if(file != NULL) {
+        file = NULL;
+    }
+    free(file);
+    printf("\nFile closed\n");
     return RC_OK;
 }
 
@@ -202,6 +207,7 @@ RC readLastBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
     }
 
     int lastPageNumber = fHandle->totalNumPages - 1;
+    printf("LAST PAGE : %d -> fHandle last page : %d\n", lastPageNumber, (fHandle->totalNumPages));
     if(lastPageNumber == -1) {
         return RC_READ_NON_EXISTING_PAGE;
     }
@@ -240,6 +246,7 @@ RC writeBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage) {
         return RC_READ_NON_EXISTING_PAGE;
     }
 
+    printf("STRLEN : %lu", strlen(memPage));
     // Eg - Syntax : fwrite(str , 1 , sizeof(str) , fp );
     int fwriteFile = fwrite(memPage, sizeof(char), strlen(memPage), file);
     printf("\nfwriteFile : %d\n", fwriteFile);
