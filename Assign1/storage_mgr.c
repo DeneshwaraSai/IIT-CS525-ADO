@@ -321,19 +321,19 @@ RC ensureCapacity (int numberOfPages, SM_FileHandle *fHandle) {
         return RC_FILE_NOT_FOUND;
     }
 
-    printf("\nScanning pages (totalNumPages) : %d\n", (fHandle->totalNumPages));
-    printf("Scanning pages : %d\n", (numberOfPages - fHandle->totalNumPages));
+    printf("\nScanning pages (totalNumPages) : %d", (fHandle->totalNumPages));
+    printf("\nScanning pages : %d\n", (numberOfPages - fHandle->totalNumPages));
 
     for (int i = 0; i < (numberOfPages - fHandle->totalNumPages);i++) {
         RC responseCode = appendEmptyBlock(fHandle);
-    
+        printf("jjhj jgjhgj : %d", responseCode);
         if (responseCode != RC_OK) {
             return responseCode;
         }
     }
 
-    printf("\nAFTER : Scanning pages (totalNumPages) : %d\n", (fHandle->totalNumPages));
-    printf("AFTER : Scanning pages : %d\n", (numberOfPages - fHandle->totalNumPages));
+    printf("\nAFTER : Scanning pages (totalNumPages) : %d", (fHandle->totalNumPages));
+    printf("\nAFTER : Scanning pages : %d\n", (numberOfPages - fHandle->totalNumPages));
 
     return RC_OK;
 }

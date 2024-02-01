@@ -61,8 +61,8 @@ void testSinglePageContent() {
     TEST_CHECK(openPageFile(TESTPF, &fh))
     TEST_CHECK(readFirstBlock(&fh, ph));
     for(int index = 0;index<10;index++) {
-        printf("-- %c -- %d\n", ph[i], (ph[i] == 0));
-        ASSERT_EQUALS_INT(ph[i] == 0, 1, "NO CHARACTER PLACED, SO NULL/EMPTY!");
+        printf("-- %c -- %d\n", ph[index], (ph[index] == 0));
+        ASSERT_EQUALS_INT(ph[index] == 0, 1, "NO CHARACTER PLACED, SO NULL/EMPTY!");
     }
     printf("--------------------------------------------------------");
 
@@ -122,4 +122,21 @@ void testSinglePageContent() {
     }
     ASSERT_TRUE(writeCurrentBlock(&fh, ph) == 0, "Written at current Block");
     printf("\n--------------------------------------------------------\n");
+
+    // Test Case - 11
+    printf("\n\n Test case 11\n");	
+    TEST_CHECK(ensureCapacity(6, &fh));
+    printf("\n--------------------------------------------------------\n");
+
+    // Test Case - 12
+    printf("\n\n Test case 12\n");
+    TEST_CHECK(readFirstBlock(&fh, ph));
+
+    for (int index = 0; index < 10; index++) {
+        ASSERT_TRUE(ph[index] == 0, "Block is empty");
+    }
+    // ASSERT_TRUE(closePageFile(&fh) == 0, " Expected to close the file!");
+    // destroyPageFile(TESTPF);
+    printf("\n--------------------------------------------------------");
+
 }
