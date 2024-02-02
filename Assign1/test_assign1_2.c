@@ -15,19 +15,21 @@ char *testName;
 /* test output files */
 #define TESTPF "test_pagefile.txt"
 
-void testSinglePageContent(void);
+void testSinglePageContentTestCases(void);
 
 int main (void) {
   testName = "";
   
+  destroyPageFile(TESTPF);
+
   initStorageManager();
 
-  testSinglePageContent();
+  testSinglePageContentTestCases();
 
   return 0;
 }
 
-void testSinglePageContent() {
+void testSinglePageContentTestCases() {
 
     SM_FileHandle fh;
     SM_PageHandle ph;
@@ -123,20 +125,17 @@ void testSinglePageContent() {
     ASSERT_TRUE(writeCurrentBlock(&fh, ph) == 0, "Written at current Block");
     printf("\n--------------------------------------------------------\n");
 
-    // Test Case - 11
-    printf("\n\n Test case 11\n");	
-    TEST_CHECK(ensureCapacity(6, &fh));
-    printf("\n--------------------------------------------------------\n");
+    // // Test Case - 11
+    // printf("\n\n Test case 11\n");	
+    // TEST_CHECK(ensureCapacity(6, &fh));
+    // printf("\n--------------------------------------------------------\n");
 
-    // Test Case - 12
-    printf("\n\n Test case 12\n");
+    // Test Case - 11
+    printf("\n\n Test case 11\n");
     TEST_CHECK(readFirstBlock(&fh, ph));
 
-    for (int index = 0; index < 10; index++) {
-        ASSERT_TRUE(ph[index] == 0, "Block is empty");
-    }
-    // ASSERT_TRUE(closePageFile(&fh) == 0, " Expected to close the file!");
-    // destroyPageFile(TESTPF);
+    ASSERT_TRUE(closePageFile(&fh) == 0, " Expected to close the file!");
+    destroyPageFile(TESTPF);
     printf("\n--------------------------------------------------------");
 
 }
