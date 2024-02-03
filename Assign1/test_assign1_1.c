@@ -18,7 +18,7 @@ char *testName;
 static void testCreateOpenClose(void);
 static void testSinglePageContent(void);
 
-/* Additional Test cases. */
+/* Additional Test cases function. */
 static void testSinglePageContentTestCases(void);
 
 /* main function running all tests */
@@ -117,6 +117,7 @@ void testSinglePageContentTestCases() {
 
     ph = (SM_PageHandle) calloc(PAGE_SIZE, sizeof(char));
     
+    /* Author : Prudhvi Teja Kari */
     // Test case - 1
     printf("\nTest case 1\n");
     TEST_CHECK(createPageFile(TESTPF));
@@ -125,6 +126,7 @@ void testSinglePageContentTestCases() {
     ASSERT_ERROR((openPageFile(TESTPF, &fh) > 0), "File cannot be opened because it was destroyed previous!");
     printf("--------------------------------------------------------");
     
+    /* Author : Deneshwara Sai Ila */
     // Test case - 2
     printf("\n\nTest case 2\n");
     TEST_CHECK(createPageFile(TESTPF));
@@ -135,6 +137,7 @@ void testSinglePageContentTestCases() {
     
     destroyPageFile(TESTPF);
 
+    /* Author : Prudhvi Teja Kari */
     // Test case - 3
     printf("\n\nTest case 3\n");
     TEST_CHECK(createPageFile(TESTPF));
@@ -147,6 +150,7 @@ void testSinglePageContentTestCases() {
     printf("--------------------------------------------------------");
 
     // Test case - 4
+    /* Author : Deneshwara Sai Ila */
     printf("\n\nTest case 4\n");
     TEST_CHECK(createPageFile(TESTPF));
     TEST_CHECK(openPageFile(TESTPF, &fh)) 
@@ -156,6 +160,7 @@ void testSinglePageContentTestCases() {
     ASSERT_TRUE(writeBlock(0, &fh, ph) == 0, "Written in blocks!");
     printf("\n--------------------------------------------------------\n");
 
+    /* Author : Prudhvi Teja Kari */
     // Test case - 5
     printf("\n\nTest case 5\n");
     TEST_CHECK(readFirstBlock(&fh, ph));
@@ -164,7 +169,8 @@ void testSinglePageContentTestCases() {
     }
     printf("\n--------------------------------------------------------\n");
 
-    // Test case - 6
+    // Test case - 6    
+    /* Author : Deneshwara Sai Ila */
     printf("\n\nTest case 6\n");
     printf("\n%d\n" , getBlockPos(&fh));
     ASSERT_EQUALS_INT(getBlockPos(&fh) == 0, 1, "In 0th page");
@@ -173,6 +179,7 @@ void testSinglePageContentTestCases() {
     printf("\n--------------------------------------------------------\n");
 
     // Test case - 7
+    /* Author : Deneshwara Sai Ila */
     printf("\n\nTest case 7\n");
     printf("\n%d\n" , getBlockPos(&fh));
     ASSERT_TRUE(readPreviousBlock(&fh, ph)==0, "Moved to previous block.");
@@ -180,6 +187,7 @@ void testSinglePageContentTestCases() {
     printf("\n--------------------------------------------------------\n");
 
     // Test case - 8
+    /* Author : Prudhvi Teja Kari */
     printf("\n\nTest case 8\n");
     printf("\n%d\n" , getBlockPos(&fh));
     ASSERT_TRUE(readCurrentBlock(&fh, ph)==0, "Moved to current block.");
@@ -187,6 +195,7 @@ void testSinglePageContentTestCases() {
     printf("\n--------------------------------------------------------\n");
 
     // Test case - 9 
+    /* Author : Deneshwara Sai Ila */
     printf("\n\nTest case 9\n");
     printf("%d\n" , getBlockPos(&fh));
     ASSERT_TRUE(readLastBlock(&fh, ph)==0, "Moved to last block.");
@@ -195,6 +204,7 @@ void testSinglePageContentTestCases() {
     printf("\n--------------------------------------------------------\n");
 
     // Test case - 10
+    /* Author : Deneshwara Sai Ila */
     printf("\n\nTest case 10\n");
     printf("%d ", fh.totalNumPages);
     for(int index = 0; index<PAGE_SIZE * 5;index++) {
@@ -209,9 +219,9 @@ void testSinglePageContentTestCases() {
     // printf("\n--------------------------------------------------------\n");
 
     // Test Case - 11
+    /* Author : Prudhvi Teja Kari */
     printf("\n\n Test case 11\n");
     TEST_CHECK(readFirstBlock(&fh, ph));
-
     ASSERT_TRUE(closePageFile(&fh) == 0, " Expected to close the file!");
     destroyPageFile(TESTPF);
     printf("\n--------------------------------------------------------");
