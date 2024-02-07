@@ -14,7 +14,6 @@ void printError (RC error) {
 		printf("EC (%i)\n", error);
 }
 
-
 char* errorMessage (RC error) {
 	char *message;
 
