@@ -27,6 +27,9 @@ typedef int RC;
 #define RC_IM_N_TO_LAGE 302
 #define RC_IM_NO_MORE_ENTRIES 303
 
+#define RC_PINNED_PAGES_IN_BUFFER 500 // Added a new macro for Buffer Manager and declaed its code as 500
+#define RC_ERROR 400  // Added a new macro for Buffer Manager and declaed its code as 400
+
 /* holder for error messages */
 extern char *RC_message;
 
