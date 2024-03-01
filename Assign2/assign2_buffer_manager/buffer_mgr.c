@@ -311,7 +311,7 @@ PageNumber *getFrameContents (BM_BufferPool *const bm) {
 
 bool * getDirtyFlags (BM_BufferPool *const bm) {
     FrameInPage * frameInPage = (FrameInPage *) bm->mgmtData;
-    bool *isFlagDirty = mallloc(sizeof(bool) * bufferSize);
+    bool *isFlagDirty = malloc(sizeof(bool) * bufferSize);
 
     for (int i=0;i<bufferSize;i++) {
         isFlagDirty[i] = (frameInPage->dirtyBit == 1) ? true : false;

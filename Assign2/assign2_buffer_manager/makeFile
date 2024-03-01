@@ -1,0 +1,36 @@
+CC = gcc
+ 
+default: test1
+
+test1: test_assign2_1.c storage_mgr.c dberror.c buffer_mgr.c buffer_mgr_stat.c
+	$(CC) -o test1 test_assign2_1.c storage_mgr.c dberror.c buffer_mgr.c buffer_mgr_stat.c -lm
+
+test2: test_assign2_2.c storage_mgr.c dberror.c buffer_mgr.c buffer_mgr_stat.c
+	$(CC) -o test2 test_assign2_2.c storage_mgr.c dberror.c buffer_mgr.c buffer_mgr_stat.c -lm
+
+test_assign2_1: test_assign2_1.c dberror.h storage_mgr.h test_helper.h buffer_mgr.h buffer_mgr_stat.h
+	$(CC) -c test_assign2_1.c -lm
+
+test_assign2_2: test_assign2_2.c dberror.h storage_mgr.h test_helper.h buffer_mgr.h buffer_mgr_stat.h
+	$(CC) -c test_assign2_2.c -lm
+
+buffer_mgr_stat: buffer_mgr_stat.c buffer_mgr_stat.h buffer_mgr.h
+	$(CC) -c buffer_mgr_stat.c
+
+buffer_mgr: buffer_mgr.c buffer_mgr.h dt.h storage_mgr.h
+	$(CC) -c buffer_mgr.c
+
+storage_mgr: storage_mgr.c storage_mgr.h 
+	$(CC) -c storage_mgr.c -lm
+
+dberror: dberror.c dberror.h 
+	$(CC) -c dberror.c
+
+clean: 
+	$(RM) test1 test2 * *~
+
+run_test1:
+	./test1
+
+run_test2:
+	./test2
