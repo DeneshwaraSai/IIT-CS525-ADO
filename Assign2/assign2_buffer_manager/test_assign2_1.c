@@ -39,8 +39,7 @@ static void testFIFO (void);
 static void testLRU (void);
 
 // main method
-int 
-main (void) 
+int main (void) 
 {
   initStorageManager();
   testName = "";
@@ -52,18 +51,23 @@ main (void)
 }
 
 // create n pages with content "Page X" and read them back to check whether the content is right
-void
-testCreatingAndReadingDummyPages (void)
+void testCreatingAndReadingDummyPages (void)
 {
   BM_BufferPool *bm = MAKE_POOL();
   testName = "Creating and Reading Back Dummy Pages";
 
   CHECK(createPageFile("testbuffer.bin"));
 
+  printf("CREATING DUMMY PAGES : 22");
   createDummyPages(bm, 22);
+
+  printf("CHECKING DUMMY PAGES : 20");
   checkDummyPages(bm, 20);
 
+  printf("CREATING DUMMY PAGES : 10000");
   createDummyPages(bm, 10000);
+
+  printf("CHECKING DUMMY PAGES : 10000");
   checkDummyPages(bm, 10000);
 
   CHECK(destroyPageFile("testbuffer.bin"));
@@ -85,8 +89,12 @@ createDummyPages(BM_BufferPool *bm, int num)
     {
       CHECK(pinPage(bm, h, i));
       sprintf(h->data, "%s-%i", "Page", h->pageNum);
+
       CHECK(markDirty(bm, h));
-      CHECK(unpinPage(bm,h));
+      printf("MARKDIRTY DONE\n");
+
+      CHECK(unpinPage(bm, h));
+      printf("UN-PIN PAGE DONE\n");
     }
 
   CHECK(shutdownBufferPool(bm));
@@ -119,9 +127,7 @@ checkDummyPages(BM_BufferPool *bm, int num)
   free(h);
 }
 
-void
-testReadPage ()
-{
+void testReadPage () {
   BM_BufferPool *bm = MAKE_POOL();
   BM_PageHandle *h = MAKE_PAGE_HANDLE();
   testName = "Reading a page";
