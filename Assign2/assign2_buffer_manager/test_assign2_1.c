@@ -231,8 +231,7 @@ testFIFO ()
 }
 
 // test the LRU page replacement strategy
-void
-testLRU (void)
+void testLRU (void)
 {
   // expected results
   const char *poolContents[] = { 

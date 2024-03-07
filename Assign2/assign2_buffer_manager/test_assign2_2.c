@@ -11,6 +11,19 @@
 // var to store the current test's name
 char *testName;
 
+typedef struct PageStructure
+{
+    int dirtyBit; 
+	int fixCountInfo;
+    
+    SM_PageHandle data; 
+	PageNumber pageNumber; 
+
+	int hitNumber;
+	int refNumber;
+} FramesInPage;
+
+
 // check whether two the content of a buffer pool is the same as an expected content 
 // (given in the format produced by sprintPoolContent)
 #define ASSERT_EQUALS_POOL(expected,bm,message)			        \
@@ -36,11 +49,12 @@ static void checkDummyPages(BM_BufferPool *bm, int num);
 static void testReadPage (void);
 
 static void testClock (void);
-static void testLFU (void);
+static void testLRU (void);
 
 static void testFIFO(void); 
 
 // main method
+// We are only with FIFO and LRU.  
 int 
 main (void) 
 {
@@ -51,7 +65,11 @@ main (void)
   testReadPage();
   // testClock();
   // testLFU();
+  
   testFIFO();
+  printf("\n=================================================================================================================================\n\n");
+  testLRU();
+  
   return 0;
 }
 
@@ -252,16 +270,16 @@ void testLFU(void)
 
 void testFIFO() {
   const char * poolContents[]= {
-            "[3 0],[-1 0],[-1 0]",
-            "[3 0],[7 0],[-1 0]",
-            "[3 0],[7 0],[6 0]",
-            "[4 0],[7 0],[6 0]",
-            "[4 0],[7 0],[6 0]",
-            "[4 0],[2 0],[6 0]",
-            "[1 0],[2 0],[6 0]",
-            "[1 0],[9 0],[6 0]",
-            "[2 0],[9 0],[6 0]",
-            "[2 0],[8 0],[6 0]"
+            "[1 0],[2 0],[3 0]",
+            "[4 0],[5 0],[6 0]",
+            "[7 0],[8 0],[9 0]",
+            "[-1 -1],[-2 -1],[-3 0]",
+            "[-4 -4],[-5 0],[-6 0]",
+            "[7 0],[-8 0],[-9 0]",
+            "[1 0],[2 0],[3 0]",
+            "[4 0],[5 0],[6 0]",
+            "[7 0],[8 0],[9 0]",
+            "[-2 0],[-8 -9],[-6 0]"
           };
 
   const int orderRequests[]= {2, 1, 9, 2, 8, 3, 7, 6, 4, 6};
@@ -275,28 +293,134 @@ void testFIFO() {
 
   CHECK(createPageFile(fileName));
   printf("File created Successfully : %s\n", fileName);
+
   createDummyPages(bufferPool, 100);
   printf("Page created Successfully : %s\n", fileName);
 
   CHECK(initBufferPool(bufferPool, fileName, 3, RS_FIFO, NULL));
 
   printf("Page Initiated Successfully : %s\n", fileName);
-
+  FramesInPage* framesInPage = NULL;
   for (int i=0;i<9;i++) {
+
     ASSERT_TRUE(pinPage(bufferPool, pHandler, orderRequests[i]) == 0, "The pinPage() executed successfully.");
+
+    FramesInPage* framesInPage = (FramesInPage *) bufferPool->mgmtData; 
+    printf("NOW FRAMES : %d", framesInPage->fixCountInfo);
+        
     ASSERT_TRUE(markDirty(bufferPool, pHandler) == 0, "The makeDirty() executed successfully.");
+
     ASSERT_TRUE(unpinPage(bufferPool, pHandler) == 0, "The unpinPage() executed successfully.");
+
+    framesInPage = (FramesInPage *) bufferPool->mgmtData; 
+
     snapshot++;
     printf("poolContents[snapshot++] : %s", (poolContents[snapshot]));
+    printf("\n BEFORE fixCountInfo : %d | hitNumber : %d | refNumber: %d \n", framesInPage->fixCountInfo, framesInPage->hitNumber, framesInPage->refNumber);
+    
+    ASSERT_EQUALS_INT(bufferPool->numPages, 3, "True: Testing the number of pages.");
+
+    printf("\ngetNumReadIO : %d", getNumReadIO(bufferPool));
+    printf("\ngetNumWriteIO : %d", getNumWriteIO(bufferPool));
+
+    PageNumber * pageNum = getFrameContents(bufferPool);
+  
+    printf("\nBEFORE : Page Number : %d", *pageNum);
+    
     printf("\n--------------------------------------- %d\n", i);
   }
 
-  ASSERT_EQUALS_INT(forceFlushPool(bufferPool), 0, "The forceFlushPool() executed Successfully.");
-  printf("%d\n",getNumReadIO(bufferPool));
-  printf("%d\n",getNumWriteIO(bufferPool));
+  ASSERT_EQUALS_INT(getNumReadIO(bufferPool),(8), "Checking read IO Info");
+  ASSERT_EQUALS_INT(getNumWriteIO(bufferPool),(5), "Checking write IO Info");
 
-  ASSERT_EQUALS_INT(8, getNumReadIO(bufferPool), "Check number from getReadIO() method");
-  ASSERT_EQUALS_INT(8, getNumWriteIO(bufferPool), "Check number from getWriteIO() method");
+  PageNumber * pageNum = getFrameContents(bufferPool);
+  ASSERT_EQUALS_INT(* pageNum, 6, "checking the page number.");
+
+  printf("AFTER : Page Number : %d", * pageNum);
+  ASSERT_EQUALS_INT(forceFlushPool(bufferPool), 0, "The forceFlushPool() executed Successfully.");
+
+  free(bufferPool);
+  free(pHandler);
+
+  TEST_DONE();
+}
+
+void testLRU() {
+  const char * poolContents[]= {
+            "[1 0],[2 0],[3 0]",
+            "[1 0],[2 0],[3 0]",
+            "[4 0],[5 0],[6 0]",
+            "[4 0],[5 0],[6 0]",
+            "[7 0],[8 0],[9 0]",
+            "[7 0],[8 0],[9 0]",
+            "[-2 0],[-8 -9],[-6 0]"
+            "[-1 -1],[-2 -1],[-3 0]",
+            "[-4 -4],[-5 0],[-6 0]",
+            "[-7 0],[-8 0],[-9 0]",
+          };
+
+  const int orderRequests[]= {2, 1, 9, 2, 8, 3, 7, 6, 4, 6};
+  char* fileName = "testBufferLRU.bin";
+  int snapshot = 0;
+
+  BM_BufferPool * bufferPool = MAKE_POOL();
+  BM_PageHandle * pHandler = MAKE_PAGE_HANDLE();
+
+  testName = "Testing LRU Page Replacement Algorithm.";
+
+  CHECK(createPageFile(fileName));
+  printf("File created Successfully : %s\n", fileName);
+
+  createDummyPages(bufferPool, 100);
+  printf("Page created Successfully : %s\n", fileName);
+
+  CHECK(initBufferPool(bufferPool, fileName, 3, RS_LRU, NULL));
+
+  printf("Page Initiated Successfully : %s\n", fileName);
+  FramesInPage* framesInPage = NULL;
+
+  int actualRead[]  = {1, 2, 3, 3, 4, 5, 6, 7, 8};
+  int actualWrite[] = {0, 0, 0, 0, 1, 2, 3, 4, 5};
+
+  for (int i=0;i<9;i++) {
+
+    ASSERT_TRUE(pinPage(bufferPool, pHandler, orderRequests[i]) == 0, "The pinPage() executed successfully.");
+
+    FramesInPage* framesInPage = (FramesInPage *) bufferPool->mgmtData; 
+    printf("NOW FRAMES : %d", framesInPage->fixCountInfo);
+        
+    ASSERT_TRUE(markDirty(bufferPool, pHandler) == 0, "The makeDirty() executed successfully.");
+
+    ASSERT_TRUE(unpinPage(bufferPool, pHandler) == 0, "The unpinPage() executed successfully.");
+
+    framesInPage = (FramesInPage *) bufferPool->mgmtData; 
+
+    snapshot++;
+    printf("\n BEFORE fixCountInfo : %d | hitNumber : %d | refNumber: %d \n", framesInPage->fixCountInfo, framesInPage->hitNumber, framesInPage->refNumber);
+    
+    ASSERT_EQUALS_INT(bufferPool->numPages, 3, "True: Testing the number of pages.");
+
+    PageNumber * pageNum = getFrameContents(bufferPool);
+  
+    printf("\nBEFORE : Page Number : %d", *pageNum);
+
+    printf("\nREAD  : %d", (getNumReadIO(bufferPool)));
+    printf("\nWRITE : %d\n", (getNumWriteIO(bufferPool)));
+
+    ASSERT_EQUALS_INT((getNumReadIO(bufferPool)), actualRead[i], "Checking read IO pool value.");
+    ASSERT_EQUALS_INT((getNumWriteIO(bufferPool)), actualWrite[i], "Checking write IO pool value.");
+
+    printf("\n--------------------------------------- %d\n", i);
+  }
+
+  ASSERT_EQUALS_INT(getNumReadIO(bufferPool),(8), "Checking read IO Info");
+  ASSERT_EQUALS_INT(getNumWriteIO(bufferPool),(5), "Checking write IO Info");
+
+  PageNumber * pageNum = getFrameContents(bufferPool);
+  ASSERT_EQUALS_INT(* pageNum, 7, "checking the page number.");
+
+  printf("AFTER : Page Number : %d", * pageNum);
+  ASSERT_EQUALS_INT(forceFlushPool(bufferPool), 0, "The forceFlushPool() executed Successfully.");
 
   free(bufferPool);
   free(pHandler);

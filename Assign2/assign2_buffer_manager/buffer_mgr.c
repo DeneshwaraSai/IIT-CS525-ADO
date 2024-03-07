@@ -31,7 +31,7 @@ typedef struct PageStructure
 
 /* ==================================================== */
 
-extern void FIFO(BM_BufferPool *const bm, FramesInPage *page) {
+void FIFO(BM_BufferPool *const bm, FramesInPage *page) {
     int indexForFront = indexForRear % bufferSize;
 
     FramesInPage * framesInPage = (FramesInPage *) bm->mgmtData;
@@ -63,145 +63,48 @@ extern void FIFO(BM_BufferPool *const bm, FramesInPage *page) {
     }
 }
 
-// Defining LFU (Least Frequently Used) function
-extern void LFU(BM_BufferPool *const bm, FramesInPage *page)
-{
-	//printf("LFU Started");
-	FramesInPage *pageFrame = (FramesInPage *) bm->mgmtData;
-	
-	int i, j, leastFreqIndex, leastFreqRef;
-	leastFreqIndex = lfuPointerCount;	
-	
-	// Interating through all the page frames in the buffer pool
-	for(i = 0; i < bufferSize; i++)
-	{
-		if(pageFrame[leastFreqIndex].fixCountInfo == 0)
-		{
-			leastFreqIndex = (leastFreqIndex + i) % bufferSize;
-			leastFreqRef = pageFrame[leastFreqIndex].refNumber;
+void LRU(BM_BufferPool *const bm, FramesInPage *page) {
+
+	SM_FileHandle fhandler;
+	int lruHitNumber = 0, lruHitIndex = 0;
+
+	FramesInPage * framesInPages = (FramesInPage * ) bm->mgmtData;
+
+	for (int i=0;i<bufferSize;i++) {
+		if (framesInPages[i].fixCountInfo == 0) {
+			lruHitNumber = framesInPages[i].hitNumber;
+			lruHitIndex = i;
 			break;
+		} else {
+			printf("Fix count is not 0");
 		}
 	}
 
-	i = (leastFreqIndex + 1) % bufferSize;
-
-	// Finding the page frame having minimum refNum (i.e. it is used the least frequent) page frame
-	for(j = 0; j < bufferSize; j++)
-	{
-		if(pageFrame[i].refNumber < leastFreqRef)
-		{
-			leastFreqIndex = i;
-			leastFreqRef = pageFrame[i].refNumber;
+	printf("\nThe lru hit index is : %d \n", lruHitIndex);
+	for (int i = (lruHitIndex + 1);i<bufferSize;i++) {
+		if (framesInPages[i].hitNumber < lruHitNumber) {
+			lruHitNumber = framesInPages[i].hitNumber;
+			lruHitIndex = i;
 		}
-		i = (i + 1) % bufferSize;
 	}
-		
-	// If page in memory has been modified (dirtyBit = 1), then write page to disk	
-	if(pageFrame[leastFreqIndex].dirtyBit == 1)
-	{
-		SM_FileHandle fh;
-		openPageFile(bm->pageFile, &fh);
-		writeBlock(pageFrame[leastFreqIndex].pageNumber, &fh, pageFrame[leastFreqIndex].data);
-		
-		// Increase the writeCount which records the number of writes done by the buffer manager.
+
+	if(framesInPages[lruHitIndex].dirtyBit == 1) {
+
+		// RC openPageFile(char *fileName, SM_FileHandle *fHandle)
+		openPageFile(bm->pageFile, &fhandler);
+
+		// RC writeBlock(int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
+		writeBlock(framesInPages[lruHitIndex].pageNumber, &fhandler, framesInPages[lruHitIndex].data);
 		writeCount++;
 	}
-	
-	// Setting page frame's content to new page's content		
-	pageFrame[leastFreqIndex].data = page->data;
-	pageFrame[leastFreqIndex].pageNumber = page->pageNumber;
-	pageFrame[leastFreqIndex].dirtyBit = page->dirtyBit;
-	pageFrame[leastFreqIndex].fixCountInfo = page->fixCountInfo;
-	lfuPointerCount = leastFreqIndex + 1;
+
+	framesInPages[lruHitIndex].pageNumber = page->pageNumber;
+	framesInPages[lruHitIndex].dirtyBit = page->dirtyBit;
+	framesInPages[lruHitIndex].data = page->data;
+
+	framesInPages[lruHitIndex].hitNumber = page->hitNumber;
+	framesInPages[lruHitIndex].fixCountInfo = page->fixCountInfo;
 }
-
-// Defining LRU (Least Recently Used) function
-extern void LRU(BM_BufferPool *const bm, FramesInPage *page)
-{	
-	FramesInPage *pageFrame = (FramesInPage *) bm->mgmtData;
-	int i, leastHitIndex, leastHitNum;
-
-	// Interating through all the page frames in the buffer pool.
-	for(i = 0; i < bufferSize; i++)
-	{
-		// Finding page frame whose fixCount = 0 i.e. no client is using that page frame.
-		if(pageFrame[i].fixCountInfo == 0)
-		{
-			leastHitIndex = i;
-			leastHitNum = pageFrame[i].hitNumber;
-			break;
-		}
-	}	
-
-	// Finding the page frame having minimum hitNum (i.e. it is the least recently used) page frame
-	for(i = leastHitIndex + 1; i < bufferSize; i++)
-	{
-		if(pageFrame[i].hitNumber < leastHitNum)
-		{
-			leastHitIndex = i;
-			leastHitNum = pageFrame[i].hitNumber;
-		}
-	}
-
-	// If page in memory has been modified (dirtyBit = 1), then write page to disk
-	if(pageFrame[leastHitIndex].dirtyBit == 1)
-	{
-		SM_FileHandle fh;
-		openPageFile(bm->pageFile, &fh);
-		writeBlock(pageFrame[leastHitIndex].pageNumber, &fh, pageFrame[leastHitIndex].data);
-		
-		// Increase the writeCount which records the number of writes done by the buffer manager.
-		writeCount++;
-	}
-	
-	// Setting page frame's content to new page's content
-	pageFrame[leastHitIndex].data = page->data;
-	pageFrame[leastHitIndex].pageNumber = page->pageNumber;
-	pageFrame[leastHitIndex].dirtyBit = page->dirtyBit;
-	pageFrame[leastHitIndex].fixCountInfo = page->fixCountInfo;
-	pageFrame[leastHitIndex].hitNumber = page->hitNumber;
-}
-
-// Defining CLOCK function
-extern void CLOCK(BM_BufferPool *const bm, FramesInPage *page)
-{	
-	//printf("CLOCK Started");
-	FramesInPage *pageFrame = (FramesInPage *) bm->mgmtData;
-	while(1)
-	{
-		clockPointerCount = (clockPointerCount % bufferSize == 0) ? 0 : clockPointerCount;
-
-		if(pageFrame[clockPointerCount].hitNumber == 0)
-		{
-			// If page in memory has been modified (dirtyBit = 1), then write page to disk
-			if(pageFrame[clockPointerCount].dirtyBit == 1)
-			{
-				SM_FileHandle fh;
-				openPageFile(bm->pageFile, &fh);
-				writeBlock(pageFrame[clockPointerCount].pageNumber, &fh, pageFrame[clockPointerCount].data);
-				
-				// Increase the writeCount which records the number of writes done by the buffer manager.
-				writeCount++;
-			}
-			
-			// Setting page frame's content to new page's content
-			pageFrame[clockPointerCount].data = page->data;
-			pageFrame[clockPointerCount].pageNumber = page->pageNumber;
-			pageFrame[clockPointerCount].dirtyBit = page->dirtyBit;
-			pageFrame[clockPointerCount].fixCountInfo = page->fixCountInfo;
-			pageFrame[clockPointerCount].hitNumber = page->hitNumber;
-			clockPointerCount++;
-			break;	
-		}
-		else
-		{
-			// Incrementing clockPointer so that we can check the next page frame location.
-			// We set hitNum = 0 so that this loop doesn't go into an infinite loop.
-			pageFrame[clockPointerCount++].hitNumber = 0;		
-		}
-	}
-}
-
 
 /* ==================================================== */
 
@@ -487,11 +390,11 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page, const PageNumber
 					break;
 
                 case RS_LFU: 
-					LFU(bm, newFramePage);
+					printf("RS_LFU : This Algorithm is not inplemented");
 					break;
 				
 				case RS_CLOCK: 
-					CLOCK(bm, newFramePage);
+					printf("RS_CLOCK : This Algorithm is not inplemented");
 					break;
 
                 case RS_FIFO: 
@@ -544,7 +447,7 @@ bool *getDirtyFlags (BM_BufferPool *const bm) {
     th element is the fix count of the page stored in the ith page frame. 
     Return 0 for empty page frames.
 */
-int *getFixCounts (BM_BufferPool *const bm) {
+int * getFixCounts (BM_BufferPool *const bm) {
 	int *countFixList = malloc(sizeof(int) * bufferSize);
 	FramesInPage *pageFrame= (FramesInPage *)bm->mgmtData;
 	
