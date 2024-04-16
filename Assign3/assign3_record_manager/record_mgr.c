@@ -8,9 +8,11 @@
 const int MAXIMUM_PAGES = 100;
 const int SIZE_OF_ATTRIBUTE = 15;
 
+/* custom functions declarations */ 
 int findFreeSlot(char *data, int recordSize);
 RC attributeOffset (Schema *schema, int attributeNumber, int *output) ;
 
+/* table and manager functions declarations */
 RC initRecordManager (void *mgmtData);
 RC shutdownRecordManager ();
 RC openTable (RM_TableData *rel, char *name);
@@ -19,23 +21,23 @@ int getNumTuples (RM_TableData *rel);
 RC deleteTable (char *name);
 RC closeTable (RM_TableData *rel);
 
-// handling records in a table
+/* handling records in a table functions declarations */
 RC insertRecord (RM_TableData *rel, Record *record);
 RC deleteRecord (RM_TableData *rel, RID id);
 RC updateRecord (RM_TableData *rel, Record *record);
 RC getRecord (RM_TableData *rel, RID id, Record *record);
 
-// scans
+// scans functions declarations 
 RC startScan (RM_TableData *rel, RM_ScanHandle *scan, Expr *cond);
 RC next (RM_ScanHandle *scan, Record *record);
 RC closeScan (RM_ScanHandle *scan);
 
-// dealing with schemas
+/* dealing with schemas functions declarations */
 int getRecordSize (Schema *schema);
 Schema *createSchema (int numAttr, char **attrNames, DataType *dataTypes, int *typeLength, int keySize, int *keys);
 RC freeSchema (Schema *schema);
 
-// dealing with records and attribute values
+/* dealing with records and attribute values functions declarations */
 RC createRecord (Record **record, Schema *schema);
 RC freeRecord (Record *record);
 RC getAttr (Record *record, Schema *schema, int attrNum, Value **value);
@@ -51,16 +53,32 @@ typedef struct RecordM {
 	int scanCount;
 } RecordManagement;
 
-RecordManagement *manager;
+RecordManagement * manager;
 
 /* ============================== table and manager ========================== */
 
+/**
+ * @author : 
+ * @details : The function `initRecordManager` initializes the storage manager and prints a message indicating the
+ * completion of the initialization process.
+ * 
+ * @param mgmtData : The `mgmtData` parameter is a pointer to any information that may be needed for managing records.
+ * 
+ * @return RC_OK
+ */
 RC initRecordManager (void *mgmtData) {
 	initStorageManager();
 	printf("\nInitialization of storage manager is done here\n");
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : The function `shutdownRecordManager` deallocates memory for the storage manager and prints a message
+ * indicating the shutdown process is complete.
+ * 
+ * @return RC_OK
+ */
 RC shutdownRecordManager () {
 	manager = NULL;
 	free(manager);
@@ -68,6 +86,20 @@ RC shutdownRecordManager () {
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : The `createTable` function creates a table with the specified name and schema, storing the schema
+ * information in a newly created page file.
+ * 
+ * @param name : The `name` parameter is a character pointer that represents the name of the table being opened. 
+ * 
+ * @param schema : The `Schema` struct contains information about the attributes of a record, such as data types and type
+ * lengths.
+ * 
+ * @return The function `createTable` is returning an `RC` (Return Code) value. 
+ * If block of code execution is successful, it will return `RC_OK`. 
+ * else returns the repective error code.
+ */
 RC createTable (char *name, Schema *schema) {
 	int output;
 	char data[PAGE_SIZE];
@@ -128,6 +160,17 @@ RC createTable (char *name, Schema *schema) {
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : The function `openTable` reads table information from a buffer manager and initializes the table
+ * data structure accordingly.
+ * 
+ * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
+ * table such as schema and management data.
+ * @param name : The `name` parameter is a character pointer that represents the name of the table being opened. 
+ * 
+ * @return RC_OK
+ */
 RC openTable (RM_TableData *rel, char *name) {
 	int count, i = 0;
 	Schema *schema;
@@ -189,16 +232,46 @@ RC openTable (RM_TableData *rel, char *name) {
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : The closeTable function closes a table by shutting down the buffer pool.
+ * 
+ * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
+ * table such as schema and management data.
+ * 
+ * @return RC_OK
+ */
+
 RC closeTable (RM_TableData *rel) {
 	RecordManagement * recordManagement = rel->mgmtData;
 	shutdownBufferPool(&recordManagement->buffer);
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : The function `deleteTable` deletes a table by destroying its page file.
+ * 
+ * @param name The `name` parameter in the `deleteTable` function is a pointer to a character array
+ * that represents the name of the table to be deleted.
+ * 
+ * @return returns an `RC` (Return Code) value, specifically `RC_OK`.
+ */
+
 RC deleteTable (char *name) {
 	destroyPageFile(name);
 	return RC_OK;
 }
+
+/**
+ * @author : 
+ * @details : The function `getNumTuples` returns the number of tuples in a given table.
+ * 
+ * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
+ * table such as schema and management data.
+ * 
+ * @return returns the number of tuples (records) in the given relation `rel`.
+ */
 
 int getNumTuples (RM_TableData *rel) {
 	RecordManagement *recordManagement = rel->mgmtData;
@@ -207,7 +280,22 @@ int getNumTuples (RM_TableData *rel) {
 
 /* ====================== HANDLING RECORDS IN A TABLE ====================== */
 
-// handling records in a table
+
+/**
+ * @author : 
+ * @details : The insertRecord function inserts a record into a table by 
+ * 1) finding a free available slot in a page, 
+ * 2) marking the page as dirty, 
+ * 3) copying the record data into the slot, and 
+ * 4) updating the tuple count.
+ * 
+ * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
+ * table such as schema and management data.
+ * @param record : The `record` parameter in the `getRecord` function is a pointer to a `Record` struct
+ * where the retrieved record data will be stored. 
+ * 
+ * @return this function returns an error code of `RC_OK` upon successful completion.
+ */
 RC insertRecord (RM_TableData *rel, Record *record) {
 	int recordSize = getRecordSize(rel->schema);
 	char *dataPtr, *inSlotPtr;
@@ -253,6 +341,17 @@ RC insertRecord (RM_TableData *rel, Record *record) {
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : The deleteRecord function deletes a record from a table by marking it as deleted in the buffer pool.
+ * 
+ * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
+ * table such as schema and management data.
+ * @param id The `id` parameter represents the Record ID (RID) of the record that needs to be deleted. 
+ * It typically consists of two parts: `page` and `slot`. 
+ * 
+ * @return This function returns an `RC` (Return Code) value, specifically `RC_OK`.
+ */
 RC deleteRecord (RM_TableData *rel, RID id) {
 
 	int recSize = getRecordSize(rel->schema);
@@ -276,6 +375,17 @@ RC deleteRecord (RM_TableData *rel, RID id) {
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : Updates a record in the specified table by modifying data on disk.
+ * 
+ * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
+ * table such as schema and management data.
+ * @param record : The `record` parameter in the `getRecord` function is a pointer to a `Record` struct
+ * where the retrieved record data will be stored. 
+ * 
+ * @return RC_OK on success, error code otherwise.
+ */
 RC updateRecord (RM_TableData *rel, Record *record) {
 	char *dataPtr;
 	RecordManagement *recordManagement = rel->mgmtData;
@@ -300,7 +410,22 @@ RC updateRecord (RM_TableData *rel, Record *record) {
 	return RC_OK;
 }
 
-extern RC getRecord (RM_TableData *rel, RID id, Record *record) {
+/**
+ * @author : 
+ * @details : This method retrieves a record from a table using the provided record ID.
+ * 
+ * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
+ * table such as schema and management data.
+ * @param id : The `id` parameter in the `getRecord` function represents the unique identifier of a
+ * record within a table. 
+ * @param record : The `record` parameter in the `getRecord` function is a pointer to a `Record` struct
+ * where the retrieved record data will be stored. 
+ * 
+ * @return RC (Return Code) 
+ * 1) If the record is successfully retrieved, it returns RC_OK. 
+ * 2) If there is no tuple with the given RID (Record ID), it returns RC_RM_NO_TUPLE_WITH_GIVEN_RID.
+ */
+RC getRecord (RM_TableData *rel, RID id, Record *record) {
 	int recSize = getRecordSize(rel->schema);
 	RecordManagement *recordManagement = rel->mgmtData;
 
@@ -327,7 +452,23 @@ extern RC getRecord (RM_TableData *rel, RID id, Record *record) {
 
 /* ======================= SCANS ===================== */
 
-// scans
+ 
+/**
+ * @author : 
+ * @details : The function `startScan` initializes a scan operation on a table with a given condition.
+ * 
+ * @param rel : rel is a pointer to the RM_TableData structure, which represents a  
+ * name with String datatype, schema with Schema data structure and mgmtData with void type.
+ * @param scan The `scan` parameter is a pointer to an `RM_ScanHandle` struct, which is used to manage
+ * a scan operation on a table.  
+ * 
+ * @param cond The `cond` parameter in the `startScan` function represents the condition that needs to
+ * be satisfied during the scan operation.  
+ * 
+ * @return It returns an error code 
+ * `RC_SCAN_CONDITION_NOT_FOUND` if the input condition `cond` is NULL. 
+ * Otherwise, it will return `RC_OK` indicating that the scan has been successfully started.
+ */
 RC startScan (RM_TableData *rel, RM_ScanHandle *scan, Expr *cond) {
 
 	if(cond == NULL) {
@@ -341,11 +482,10 @@ RC startScan (RM_TableData *rel, RM_ScanHandle *scan, Expr *cond) {
 	openTable(rel, "TableScaning");
 
 	scanManagement = (RecordManagement *) malloc (sizeof(RecordManagement));
-	// scan->mgmtData = scanManagement;
 
+	scanManagement->scanCount = 0;
 	scanManagement->constraint = cond;
 	scanManagement->recordId.page = 1;
-	scanManagement->scanCount = 0;
 	scanManagement->recordId.slot = 0;
 	scanManagement->tupleCount = SIZE_OF_ATTRIBUTE;
 
@@ -356,6 +496,19 @@ RC startScan (RM_TableData *rel, RM_ScanHandle *scan, Expr *cond) {
 
 	return RC_OK;
 }
+
+/**
+ * @author : 
+ * @details : The function `next` iterates through records in a table based on a scan condition and returns the
+ * next record that satisfies the condition.
+ * 
+ * @param scan : The `scan` parameter contains information about a scan operation in a record manager.
+ * @param record : The `record` parameter is a part of Record Struct.
+ * 
+ * @return The function `RC next` returns  : 
+ * 1) `RC_OK` if a matching record is found based on the scan condition,(that too on bool datatype)  
+ * 2) `RC_RM_NO_MORE_TUPLES` if there are no more tuples to scan.
+ */
 
 RC next (RM_ScanHandle *scan, Record *record) {
 	RecordManagement *scanManager = scan->mgmtData;
@@ -430,6 +583,15 @@ RC next (RM_ScanHandle *scan, Record *record) {
 	return RC_RM_NO_MORE_TUPLES;
 }
 
+/**
+ * @author : 
+ * @details : The closeScan function closes a scanned RM_ScanHandle and frees up allocated memory.
+ * 
+ * @param scan : The `scan` parameter is a pointer to an `RM_ScanHandle` structure, which is used for scanning records.
+ * 
+ * @return RC_OK
+ */
+
 RC closeScan (RM_ScanHandle *scan) {
 
 	if (scan == NULL) {
@@ -455,9 +617,21 @@ RC closeScan (RM_ScanHandle *scan) {
 	return RC_OK;
 }
 
-/* ============================================ */
 
-// dealing with schemas
+/* =========================================================== */
+
+
+/**
+ * @author : 
+ * @details : The function calculates the size of a record based on the data types and lengths specified in a
+ * given schema.
+ * 
+ * @param schema : The `Schema` struct contains information about the attributes of a record, such as data types and type
+ * lengths.
+ * 
+ * @return the total size of a record in bytes based on the data types and size of datatype specified in the
+ * given schema.
+ */
 int getRecordSize (Schema *schema) {
 	int recordSize = 0;
 
@@ -484,6 +658,21 @@ int getRecordSize (Schema *schema) {
 	return ++recordSize;
 }
 
+
+/**
+ * @author : 
+ * @details : The function `createSchema` dynamically allocates memory for a Schema struct and assigns value to the attributes of schema
+ 
+ * @param numAttr : The `numAttr` parameter represents the number of attributes in the schema.
+ * @param attrNames : The `attrNames` parameter is a pointer to an array of strings representing the attribute names in a schema structure.  
+ * @param dataTypes : The `dataTypes` parameter is a pointer to an array `dataTypes` 
+ * @param typeLength : The `typeLength` parameter is an array that specifies the length of each attribute's data type. 
+ * @param keySize The `keySize` parameter represents the size of the key attributes in the schema. 
+ * @param keys : The `keys` parameter represents an array of integers that specifies the attribute indices  
+ * 
+ * @return This function is returning a pointer to a Schema struct that has been dynamically allocated
+ * in memory.
+ */
 Schema * createSchema (int numAttr, char **attrNames, DataType *dataTypes, int *typeLength, int keySize, int *keys) {
 	Schema * schema = (Schema *) malloc (sizeof(Schema));
 	schema->attrNames = attrNames;
@@ -495,12 +684,28 @@ Schema * createSchema (int numAttr, char **attrNames, DataType *dataTypes, int *
 	return schema;
 }
 
+/**
+ * @author : 
+ * @details : The function `freeSchema` frees the memory allocated for a Schema structure.
+ * 
+ * @param schema The `schema` parameter is a pointer to a `Schema` structure that needs to be freed from memory.
+ * 
+ * @return an RC (Return Code) value, specifically RC_OK.
+ */
 RC freeSchema (Schema *schema) {
 	free(schema);
 	return RC_OK;
 }
 
-// dealing with records and attribute values
+/**
+ * @author : 
+ * @details : The `createRecord` function allocates memory for a new record, initializes its fields.
+ * 
+ * @param record Record **record is a pointer to a pointer to a Record struct. 
+ * @param schema The `schema` parameter in the `createRecord` function is a pointer to a `Schema` struct.
+ * 
+ * @return The function `createRecord` is returning an `RC` (Return Code) value, specifically `RC_OK`.
+ */
 RC createRecord (Record **record, Schema *schema) {
 	Record *tempRecord = (Record*) malloc(sizeof(Record));
 	int rSize = getRecordSize(schema);
@@ -517,11 +722,33 @@ RC createRecord (Record **record, Schema *schema) {
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : The function `freeRecord` frees the memory allocated for a Record structure.
+ * 
+ * @param record The `record` parameter is a pointer to a `Record` structure that needs to be freed
+ * from memory.
+ * 
+ * @return an RC (Return Code) value, specifically RC_OK.
+ */
 RC freeRecord (Record *record) {
+	if (record == NULL) {
+		return RC_OK;
+	}
 	free(record);
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details : Retrieves the attribute value from a given record based on the schema and attribute number.
+ *
+ * @param record Pointer to the record from which to retrieve the attribute.
+ * @param schema Pointer to the schema defining the structure of the record.
+ * @param attrNum The number of the attribute to retrieve.
+ * @param value Pointer to a pointer where the retrieved attribute value will be stored.
+ * @return Returns RC_OK if successful, or an error code if an error occurs.
+ */
 RC getAttr (Record *record, Schema *schema, int attrNum, Value **value) {
 
 	int offset = 0;
@@ -532,6 +759,7 @@ RC getAttr (Record *record, Schema *schema, int attrNum, Value **value) {
 	Value *attributeValue = (Value*) malloc(sizeof(Value));
 	char *data;
 
+	// attributeOffset(Schema *schema, int attributeNumber, int *output)
 	attributeOffset(schema, attrNum, &offset);
 
 	data = record->data;
@@ -543,28 +771,28 @@ RC getAttr (Record *record, Schema *schema, int attrNum, Value **value) {
 		case DT_INT:
 					intValue = 0;
 					memcpy(&intValue, data, sizeof(int));
-					attributeValue->v.intV = intValue;
 					attributeValue->dt = DT_INT;
+					attributeValue->v.intV = intValue;
 					break;
 
 		case DT_FLOAT:
 					memcpy(&floatValue, data, sizeof(float));
-					attributeValue->v.floatV = floatValue;
 					attributeValue->dt = DT_FLOAT;
+					attributeValue->v.floatV = floatValue;
 					break;
 
 		case DT_BOOL:
 					memcpy(&boolValue, data, sizeof(bool));
-					attributeValue->v.boolV = boolValue;
 					attributeValue->dt = DT_BOOL;
+					attributeValue->v.boolV = boolValue;
 					break;
 
 		case DT_STRING:
 				length = schema->typeLength[attrNum];
+				attributeValue->dt = DT_STRING;
 				attributeValue->v.stringV = (char *) malloc(length + 1);
 				strncpy(attributeValue->v.stringV, data, length);
 				attributeValue->v.stringV[length] = '\0';
-				attributeValue->dt = DT_STRING;
 				break;
 
 		default:
@@ -576,13 +804,28 @@ RC getAttr (Record *record, Schema *schema, int attrNum, Value **value) {
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * 
+ * @details: function updates the value of the attribute at the specified index in the given record
+ * according to the provided schema. It handles different data types including integer, float,
+ * string, and boolean.
+ *
+ * @param record : Pointer to the record whose attribute needs to be set.
+ * @param schema : Pointer to the schema defining the structure of the record.
+ * @param attrNum : The index of the attribute to be set.
+ * @param value : Pointer to the new value to be assigned to the attribute.
+ * 
+ * @return RC_OK : if the operation is successful then return 0, otherwise an error code.
+ */
 RC setAttr (Record *record, Schema *schema, int attrNum, Value *value) {
 	int offset = 0;
+	char *data;
 
+	// attributeOffset(Schema *schema, int attributeNumber, int *output)
 	attributeOffset(schema, attrNum, &offset);
 
-	char *data = record->data;
-
+	data = record->data;
 	data = data + offset;
 
 	switch(schema->dataTypes[attrNum]) {
@@ -607,17 +850,31 @@ RC setAttr (Record *record, Schema *schema, int attrNum, Value *value) {
 					break;
 		default:
 			printf("Serializer not defined for the given datatype. \n");
-			break;
+			exit(0);
 	}
 	return RC_OK;
 }
 
-RC attributeOffset (Schema *schema, int attributeNumber, int *output) {
+/* ============================================= MY CUSTOM FUNCTIONS FOR HELPING THE CODE ===================================== */
 
+/**
+ * @author : 
+ * @details: The function attributeOffset calculates the offset of a specific attribute within a schema based on
+ * its data type and length.
+ * 
+ * @param schema The `schema` parameter is a pointer to a structure of type `Schema`.
+ * @param attributeNumber The `attributeNumber` parameter represents the number of attributes in a schema.
+ * @param output The `output` parameter is a pointer to an integer where the calculated offset value will be stored. 
+ * @return The function `attributeOffset` is returning an `RC` (Return Code) value, specifically `RC_OK`.
+ */
+RC attributeOffset (Schema *schema, int attributeNumber, int *output) {
+	int i=0;
 	*output = 1;
 
-	for(int i = 0; i < attributeNumber; i++) {
+	while (i < attributeNumber) {
+
 		switch (schema->dataTypes[i]) {
+
 			case DT_INT:
 				*output = *output + sizeof(int);
 				break;
@@ -634,15 +891,30 @@ RC attributeOffset (Schema *schema, int attributeNumber, int *output) {
 				*output = *output + sizeof(bool);
 				break;
 		}
+		i++;
 	}
 	return RC_OK;
 }
 
+/**
+ * @author : 
+ * @details: The function `findFreeSlot` searches for the first available free slot in a character data array based on a record size.
+ * 
+ * @param data The `data` parameter is a pointer to the beginning of a memory block where records are
+ * stored. 
+ * @param recordSize Record size is the size of each record in bytes. It is used to calculate the total
+ * number of slots that can fit in a page.
+ * 
+ * @return The function `findFreeSlot` returns the index of the first free slot in the data array.
+ */
 int findFreeSlot(char *data, int recordSize) {
-	int totalNoOfSlots = PAGE_SIZE / recordSize;
+	int i = 0, totalNoOfSlots = PAGE_SIZE / recordSize;
 
-	for (int i = 0; i < totalNoOfSlots; i++)
-		if (data[i * recordSize] != '+')
+	while(i < totalNoOfSlots) {
+		if (data[i * recordSize] != '+') {
 			return i;
+		}
+		i++;
+	}
 	return -1;
 }
