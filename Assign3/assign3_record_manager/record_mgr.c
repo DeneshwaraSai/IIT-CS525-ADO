@@ -5,6 +5,7 @@
 #include "buffer_mgr.h"
 #include "storage_mgr.h"
 
+/* Some constants taht are helpful for the assignment */
 const int MAXIMUM_PAGES = 100;
 const int SIZE_OF_ATTRIBUTE = 15;
 
@@ -43,6 +44,7 @@ RC freeRecord (Record *record);
 RC getAttr (Record *record, Schema *schema, int attrNum, Value **value);
 RC setAttr (Record *record, Schema *schema, int attrNum, Value *value);
 
+/* The Main Data Structure */
 typedef struct RecordM {
 	BM_BufferPool buffer;
 	BM_PageHandle pHandler;
@@ -58,7 +60,7 @@ RecordManagement * manager;
 /* ============================== table and manager ========================== */
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : The function `initRecordManager` initializes the storage manager and prints a message indicating the
  * completion of the initialization process.
  * 
@@ -73,7 +75,7 @@ RC initRecordManager (void *mgmtData) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The function `shutdownRecordManager` deallocates memory for the storage manager and prints a message
  * indicating the shutdown process is complete.
  * 
@@ -87,7 +89,7 @@ RC shutdownRecordManager () {
 }
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : The `createTable` function creates a table with the specified name and schema, storing the schema
  * information in a newly created page file.
  * 
@@ -161,7 +163,7 @@ RC createTable (char *name, Schema *schema) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The function `openTable` reads table information from a buffer manager and initializes the table
  * data structure accordingly.
  * 
@@ -233,7 +235,7 @@ RC openTable (RM_TableData *rel, char *name) {
 }
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : The closeTable function closes a table by shutting down the buffer pool.
  * 
  * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
@@ -249,7 +251,7 @@ RC closeTable (RM_TableData *rel) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The function `deleteTable` deletes a table by destroying its page file.
  * 
  * @param name The `name` parameter in the `deleteTable` function is a pointer to a character array
@@ -264,7 +266,7 @@ RC deleteTable (char *name) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The function `getNumTuples` returns the number of tuples in a given table.
  * 
  * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
@@ -282,7 +284,7 @@ int getNumTuples (RM_TableData *rel) {
 
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : The insertRecord function inserts a record into a table by 
  * 1) finding a free available slot in a page, 
  * 2) marking the page as dirty, 
@@ -342,7 +344,7 @@ RC insertRecord (RM_TableData *rel, Record *record) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The deleteRecord function deletes a record from a table by marking it as deleted in the buffer pool.
  * 
  * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
@@ -376,7 +378,7 @@ RC deleteRecord (RM_TableData *rel, RID id) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : Updates a record in the specified table by modifying data on disk.
  * 
  * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
@@ -411,7 +413,7 @@ RC updateRecord (RM_TableData *rel, Record *record) {
 }
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : This method retrieves a record from a table using the provided record ID.
  * 
  * @param rel : `rel` is a pointer to the `RM_TableData` structure, which contains information about the
@@ -454,7 +456,7 @@ RC getRecord (RM_TableData *rel, RID id, Record *record) {
 
  
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : The function `startScan` initializes a scan operation on a table with a given condition.
  * 
  * @param rel : rel is a pointer to the RM_TableData structure, which represents a  
@@ -498,7 +500,7 @@ RC startScan (RM_TableData *rel, RM_ScanHandle *scan, Expr *cond) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The function `next` iterates through records in a table based on a scan condition and returns the
  * next record that satisfies the condition.
  * 
@@ -584,7 +586,7 @@ RC next (RM_ScanHandle *scan, Record *record) {
 }
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : The closeScan function closes a scanned RM_ScanHandle and frees up allocated memory.
  * 
  * @param scan : The `scan` parameter is a pointer to an `RM_ScanHandle` structure, which is used for scanning records.
@@ -622,7 +624,7 @@ RC closeScan (RM_ScanHandle *scan) {
 
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The function calculates the size of a record based on the data types and lengths specified in a
  * given schema.
  * 
@@ -660,7 +662,7 @@ int getRecordSize (Schema *schema) {
 
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : The function `createSchema` dynamically allocates memory for a Schema struct and assigns value to the attributes of schema
  
  * @param numAttr : The `numAttr` parameter represents the number of attributes in the schema.
@@ -685,10 +687,10 @@ Schema * createSchema (int numAttr, char **attrNames, DataType *dataTypes, int *
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The function `freeSchema` frees the memory allocated for a Schema structure.
  * 
- * @param schema The `schema` parameter is a pointer to a `Schema` structure that needs to be freed from memory.
+ * @param schema : The `schema` parameter is a pointer to a `Schema` structure that needs to be freed from memory.
  * 
  * @return an RC (Return Code) value, specifically RC_OK.
  */
@@ -698,7 +700,7 @@ RC freeSchema (Schema *schema) {
 }
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : The `createRecord` function allocates memory for a new record, initializes its fields.
  * 
  * @param record Record **record is a pointer to a pointer to a Record struct. 
@@ -723,7 +725,7 @@ RC createRecord (Record **record, Schema *schema) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details : The function `freeRecord` frees the memory allocated for a Record structure.
  * 
  * @param record The `record` parameter is a pointer to a `Record` structure that needs to be freed
@@ -740,7 +742,7 @@ RC freeRecord (Record *record) {
 }
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details : Retrieves the attribute value from a given record based on the schema and attribute number.
  *
  * @param record Pointer to the record from which to retrieve the attribute.
@@ -805,8 +807,7 @@ RC getAttr (Record *record, Schema *schema, int attrNum, Value **value) {
 }
 
 /**
- * @author : 
- * 
+ * @author : Prudhvi Teja Kari
  * @details: function updates the value of the attribute at the specified index in the given record
  * according to the provided schema. It handles different data types including integer, float,
  * string, and boolean.
@@ -858,7 +859,7 @@ RC setAttr (Record *record, Schema *schema, int attrNum, Value *value) {
 /* ============================================= MY CUSTOM FUNCTIONS FOR HELPING THE CODE ===================================== */
 
 /**
- * @author : 
+ * @author : Deneshwara Sai Ila
  * @details: The function attributeOffset calculates the offset of a specific attribute within a schema based on
  * its data type and length.
  * 
@@ -897,7 +898,7 @@ RC attributeOffset (Schema *schema, int attributeNumber, int *output) {
 }
 
 /**
- * @author : 
+ * @author : Prudhvi Teja Kari
  * @details: The function `findFreeSlot` searches for the first available free slot in a character data array based on a record size.
  * 
  * @param data The `data` parameter is a pointer to the beginning of a memory block where records are
