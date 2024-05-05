@@ -34,6 +34,14 @@ typedef int RC;
 #define RC_RM_NO_TUPLE_WITH_GIVEN_RID 600
 #define RC_SCAN_CONDITION_NOT_FOUND 601
 
+
+// Added for assignment 4
+#define RC_BTREE_MEMORY_MAXIMUM 4000
+#define RC_B_PLUS_TREE_NOT_DELETING 4001
+#define RC_MAKE_INSERT_ERROR 4002
+#define RC_MAKE_INSERT_KEY_ERROR 4003
+#define RC_MAKE_INSERT_PTR_ERROR 4004
+
 /* holder for error messages */
 extern char *RC_message;
 
